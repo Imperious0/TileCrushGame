@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,10 @@ public class GameManager : MonoBehaviour
     private GameSettings gSettings;
 
     private ITile[,] tileBoard;
+
+    private List<Vector2> awaitingTileActionList;
+
+    private bool isSelectedOnce = false;
 
 
     [SerializeField]
@@ -34,11 +39,69 @@ public class GameManager : MonoBehaviour
             DestroyImmediate(gameObject);
         }
     }
+    private void Update()
+    {
+        if (gSettings.MCapturer.getCurrentMotion().Equals(MotionType.MOVEMENT))
+        {
+            if (!isSelectedOnce && awaitingTileActionList.Count == 0)
+            {
+                isSelectedOnce = true;
 
+                Ray ray = Camera.main.ScreenPointToRay(gSettings.MCapturer.getFirstTap());
+                RaycastHit2D rayHit = Physics2D.GetRayIntersection(ray);
+                if (rayHit.transform == null)
+                    return;
+
+                ITile hitTile = rayHit.transform.gameObject.GetComponent(typeof(ITile)) as ITile;
+                if (hitTile != null)
+                {
+                    Vector2 hitTilePos = hitTile.getTilePos();
+                    Vector2 flipTilePos = new Vector2(hitTilePos.x, hitTilePos.y);
+
+                    float verticalForce = gSettings.MCapturer.getVerticalMovementForce();
+                    float horizontalForce = gSettings.MCapturer.getHorizontalMovementForce();
+                    ITile flipTile = null;
+                    if(Mathf.Abs(verticalForce) > Mathf.Abs(horizontalForce))
+                    {
+                        if(verticalForce > 0)
+                            flipTilePos.x -= 1;
+                        else
+                            flipTilePos.x += 1;
+                    }
+                    else
+                    {
+                        if (horizontalForce > 0)
+                            flipTilePos.y += 1;
+                        else
+                            flipTilePos.y -= 1;
+                    }
+
+                    if (flipTilePos.x < 0 || flipTilePos.x >= tileBoard.GetLength(0) || flipTilePos.y < 0 || flipTilePos.y >= tileBoard.GetLength(1))
+                        return;
+
+                    flipTile = tileBoard[(int)flipTilePos.x, (int)flipTilePos.y];
+                    flipTile.moveToPos(hitTilePos);
+                    hitTile.moveToPos(flipTilePos);
+                    tileBoard[(int)hitTilePos.x, (int)hitTilePos.y] = flipTile;
+                    tileBoard[(int)flipTilePos.x, (int)flipTilePos.y] = hitTile;
+
+                    awaitingTileActionList.Add(hitTile.getTilePos());
+                    awaitingTileActionList.Add(flipTile.getTilePos());
+                }
+            }
+
+
+        }
+        else
+        {
+            isSelectedOnce = false;
+        }
+    }
     private void initializeGrid()
     {
 
         tileBoard = new ITile[(int)gSettings.GridSize.x, (int)gSettings.GridSize.y];
+        awaitingTileActionList = new List<Vector2>();
 
         GameObject bg = null;
         GameObject tmp = null;
@@ -110,14 +173,16 @@ public class GameManager : MonoBehaviour
 
                 #endregion
 
-                int selectedTile = Random.Range(0, selectableTiles.Count);
+                int selectedTile = UnityEngine.Random.Range(0, selectableTiles.Count);
                 selectedTile = tileTypes.IndexOf(selectableTiles[selectedTile]);
 
                 tmp = Instantiate(gSettings.TilePrefabs[selectedTile], gSettings.GridHolder.transform, false);
                 Resize(tmp, gSettings.GridHolder.transform);
 
                 tmpTile = tmp.GetComponent(typeof(ITile)) as ITile;
-                tmpTile?.spawnAtPos(new Vector2(i, j));
+                tmpTile.MovementDoneEvent += tileAnimationDoneListener;
+                tmpTile?.spawnAtPos(new Vector2(i , j));
+
                 tileBoard[i, j] = tmpTile;
 
                 //Recreate selectables
@@ -163,18 +228,33 @@ public class GameManager : MonoBehaviour
 
     }
 
+    private void tileAnimationDoneListener (object sender, EventArgs e)
+    {
+        ITile s = sender as ITile;
+        awaitingTileActionList.Remove(s.getTilePos());
+    }
+    private void checkForBubble()
+    {
+        throw new System.NotImplementedException();
+    }
+    private void shiftGridItems()
+    {
+        throw new System.NotImplementedException();
+    }
     [System.Serializable]
     private class GameSettings
     {
         [Header("General Setting")]
         [SerializeField]
-        private Vector2 _stableResolution = Vector2.zero;
+        private MotionCapturer mCapturer;
         [SerializeField]
-        private GameObject _gridHolder;
+        private Vector2 _stableResolution = Vector2.zero;
         [SerializeField]
         private Vector2 _gridSize = Vector2.one;
 
         [Header("Prefabs")]
+        [SerializeField]
+        private GameObject _gridHolder;
         [SerializeField]
         private GameObject tileBG;
         [SerializeField]
@@ -185,5 +265,6 @@ public class GameManager : MonoBehaviour
         public List<GameObject> TilePrefabs { get => tilePrefabs; }
         public GameObject TileBG { get => tileBG; }
         public GameObject GridHolder { get => _gridHolder; }
+        public MotionCapturer MCapturer { get => mCapturer; }
     }
 }

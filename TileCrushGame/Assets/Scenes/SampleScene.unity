@@ -148,7 +148,7 @@ Transform:
   m_GameObject: {fileID: 335238162}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.9, y: 0.8, z: 1}
+  m_LocalScale: {x: 0.9, y: 0.75, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -316,9 +316,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gSettings:
+    mCapturer: {fileID: 508611614}
     _stableResolution: {x: 1080, y: 2340}
-    _gridHolder: {fileID: 335238162}
     _gridSize: {x: 8, y: 8}
+    _gridHolder: {fileID: 335238162}
     tileBG: {fileID: 6299413569579373003, guid: fdf35652c646c604eab5abd8f4c5c174, type: 3}
     tilePrefabs:
     - {fileID: 6620855004467623975, guid: 7bc64ad645da4434eaba0074180df11c, type: 3}

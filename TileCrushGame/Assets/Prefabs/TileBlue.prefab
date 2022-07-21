@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5294988321334221837}
   - component: {fileID: 3844461372160014963}
   - component: {fileID: -6321016236841896375}
+  - component: {fileID: -4505970822421813750}
   m_Layer: 0
   m_Name: TileBlue
   m_TagString: Untagged
@@ -98,3 +99,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tileType: Blue
+  _animationSpeed: 1
+  _animationDuration: 0.5
+--- !u!61 &-4505970822421813750
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6620855004467623975}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 0.9892473}
+    newSize: {x: 0.9764706, y: 0.9764706}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1, y: 0.9892473}
+  m_EdgeRadius: 0
