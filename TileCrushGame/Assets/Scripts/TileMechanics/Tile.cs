@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer))]
+[RequireComponent(typeof(SpriteRenderer)), RequireComponent(typeof(Collider2D))]
 public class Tile : MonoBehaviour, ITile
 {
     [SerializeField]
@@ -17,6 +17,7 @@ public class Tile : MonoBehaviour, ITile
     public event EventHandler<EventArgs> MovementDoneEvent;
 
     private SpriteRenderer sRenderer;
+    private Collider2D sCollider;
 
     private Vector2 _prevIndex = Vector2.zero;
     private Vector2 _currentIndex = Vector2.zero;
@@ -30,6 +31,7 @@ public class Tile : MonoBehaviour, ITile
     private void Awake()
     {
         sRenderer = GetComponent<SpriteRenderer>();
+        sCollider = GetComponent<Collider2D>();
     }
 
     private void Update()
@@ -77,8 +79,13 @@ public class Tile : MonoBehaviour, ITile
     }
     public void Bubble()
     {
+        if (_isBubbled)
+            return;
+
         sRenderer.enabled = false;
+        sCollider.enabled = false;
         _isBubbled = true;
+        Destroy(gameObject);
     }
     public bool isBubbled()
     {

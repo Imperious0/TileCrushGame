@@ -13,11 +13,9 @@ public class GameManager : MonoBehaviour
     private GameSettings gSettings;
 
     private ITile[,] tileBoard;
-
     private List<Vector2> awaitingTileActionList;
 
     private bool isSelectedOnce = false;
-
 
     [SerializeField]
     private Vector3 tileOffset = Vector3.zero;
@@ -87,10 +85,9 @@ public class GameManager : MonoBehaviour
 
                     awaitingTileActionList.Add(hitTile.getTilePos());
                     awaitingTileActionList.Add(flipTile.getTilePos());
+                    StartCoroutine(chainBubbleCheck(hitTile, flipTile));
                 }
             }
-
-
         }
         else
         {
@@ -99,7 +96,6 @@ public class GameManager : MonoBehaviour
     }
     private void initializeGrid()
     {
-
         tileBoard = new ITile[(int)gSettings.GridSize.x, (int)gSettings.GridSize.y];
         awaitingTileActionList = new List<Vector2>();
 
@@ -107,14 +103,12 @@ public class GameManager : MonoBehaviour
         GameObject tmp = null;
         ITile tmpTile = null;
 
-
         if (tileOffset.Equals(Vector3.zero))
         {
             bg = Instantiate(gSettings.TileBG, gSettings.GridHolder.transform, false);
             Resize(bg, gSettings.GridHolder.transform);
-
-
             bg.transform.localScale = bg.transform.localScale + Vector3.one * 0.01f;
+
             tileOffset = bg.transform.localScale;
             bg.GetComponent<SpriteRenderer>().size = new Vector2(gSettings.GridSize.y, gSettings.GridSize.x);
         }
@@ -233,13 +227,113 @@ public class GameManager : MonoBehaviour
         ITile s = sender as ITile;
         awaitingTileActionList.Remove(s.getTilePos());
     }
-    private void checkForBubble()
+    private IEnumerator chainBubbleCheck(ITile tile1 = null, ITile tile2 = null)
     {
-        throw new System.NotImplementedException();
+        yield return new WaitUntil(() => { return awaitingTileActionList.Count == 0; });
+        bool isAnyBubble = false;
+        while (checkForBubble())
+        {
+            if(!isAnyBubble)
+                isAnyBubble = true;
+            
+            shiftGridItems();
+            yield return new WaitUntil(() => { return (awaitingTileActionList.Count == 0); });
+        }
+        if (!isAnyBubble && tile1 != null && tile2 != null)
+        {
+            tile1.revertMovement();
+            tile2.revertMovement();
+            Vector2 tile1Pos = tile1.getTilePos();
+            Vector2 tile2Pos = tile2.getTilePos();
+            tileBoard[(int)tile1Pos.x, (int)tile1Pos.y] = tile1;
+            tileBoard[(int)tile2Pos.x, (int)tile2Pos.y] = tile2;
+        }
+    }
+    private bool checkForBubble()
+    {
+        List<ITile> bubbleList = new List<ITile>();
+
+        for (int i = 0; i < tileBoard.GetLength(0); i++)
+        {
+            for (int j = 0; j < tileBoard.GetLength(1); j++)
+            {
+                if(i - 1 >= 0 && i + 1 < tileBoard.GetLength(0))
+                {
+                    if (tileBoard[i - 1, j].getTileType().Equals(tileBoard[i, j].getTileType())
+                    && tileBoard[i, j].getTileType().Equals(tileBoard[i + 1, j].getTileType()))
+                    {
+                        tileBoard[i - 1, j].Bubble();
+                        tileBoard[i, j].Bubble();
+                        tileBoard[i + 1, j].Bubble();
+                        bubbleList.Add(tileBoard[i - 1, j]);
+                        bubbleList.Add(tileBoard[i, j]);
+                        bubbleList.Add(tileBoard[i + 1, j]);
+                    }
+                }
+                if(j - 1 >= 0 && j + 1 < tileBoard.GetLength(1))
+                {
+                    if (tileBoard[i, j - 1].getTileType().Equals(tileBoard[i, j].getTileType())
+                        && tileBoard[i, j].getTileType().Equals(tileBoard[i, j + 1].getTileType()))
+                    {
+                        tileBoard[i, j - 1].Bubble();
+                        tileBoard[i, j].Bubble();
+                        tileBoard[i, j + 1].Bubble();
+                        bubbleList.Add(tileBoard[i, j - 1]);
+                        bubbleList.Add(tileBoard[i, j]);
+                        bubbleList.Add(tileBoard[i, j + 1]);
+                    }
+                }
+
+            }
+        }
+        if(bubbleList.Count > 0)
+        {
+            bubbleList = bubbleList.Distinct().ToList();
+        }
+        return (bubbleList.Count > 0);
+
     }
     private void shiftGridItems()
     {
-        throw new System.NotImplementedException();
+        for (int i = 0; i < tileBoard.GetLength(1); i++)
+        {
+            List<ITile> column = new List<ITile>();
+            for (int j = 0; j < tileBoard.GetLength(0); j++)
+            {
+                column.Add(tileBoard[j, i]);
+            }
+            column.RemoveAll(t => t.isBubbled());
+
+            int startOffset = (int)tileBoard.GetLength(0) - column.Count;
+
+            GameObject tmp;
+            ITile tmpTile;
+            int index = startOffset - 1;
+            while(column.Count < tileBoard.GetLength(0))
+            {
+                int selectedTile = UnityEngine.Random.Range(0, gSettings.TilePrefabs.Count);
+                tmp = Instantiate(gSettings.TilePrefabs[selectedTile], gSettings.GridHolder.transform, false);
+                Resize(tmp, gSettings.GridHolder.transform);
+
+                tmpTile = tmp.GetComponent(typeof(ITile)) as ITile;
+                tmpTile.MovementDoneEvent += tileAnimationDoneListener;
+
+                column.Insert(0, tmpTile);
+
+                tmpTile.spawnAtPos(new Vector2(-startOffset + index, i));
+                index--;
+            }
+            for (int j = 0; j < tileBoard.GetLength(0); j++)
+            {
+                tileBoard[j, i] = column[j];
+                if(!tileBoard[j, i].getTilePos().Equals(new Vector2(j, i)))
+                {
+                    tileBoard[j, i].moveToPos(new Vector2(j, i));
+                    awaitingTileActionList.Add(tileBoard[j, i].getTilePos());
+                }
+
+            }
+        }
     }
     [System.Serializable]
     private class GameSettings
