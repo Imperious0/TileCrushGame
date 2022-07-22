@@ -58,7 +58,7 @@ public class GameManager : MonoBehaviour
 
                     float verticalForce = gSettings.MCapturer.getVerticalMovementForce();
                     float horizontalForce = gSettings.MCapturer.getHorizontalMovementForce();
-                    ITile flipTile = null;
+                    ITile flipTile;
                     if(Mathf.Abs(verticalForce) > Mathf.Abs(horizontalForce))
                     {
                         if(verticalForce > 0)
@@ -224,6 +224,9 @@ public class GameManager : MonoBehaviour
 
     private void tileAnimationDoneListener (object sender, EventArgs e)
     {
+        if (sender == null)
+            return;
+
         ITile s = sender as ITile;
         awaitingTileActionList.Remove(s.getTilePos());
     }

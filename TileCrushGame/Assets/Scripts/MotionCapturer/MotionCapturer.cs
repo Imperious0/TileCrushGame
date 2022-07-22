@@ -13,8 +13,6 @@ public class MotionCapturer : MonoBehaviour
     //Temporary Variable
     float tapCurrentTime = 0f;
  
-
-
     MotionType currentMotion = MotionType.NONE;
     private void Start()
     {
