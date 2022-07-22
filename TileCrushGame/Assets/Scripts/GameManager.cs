@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour
     private List<Vector2> awaitingTileActionList;
 
     private bool isSelectedOnce = false;
-
+    private bool chainReactionOTG = false;
     [SerializeField]
     private Vector3 tileOffset = Vector3.zero;
 
@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
     {
         if (gSettings.MCapturer.getCurrentMotion().Equals(MotionType.MOVEMENT))
         {
-            if (!isSelectedOnce && awaitingTileActionList.Count == 0)
+            if (!isSelectedOnce && awaitingTileActionList.Count == 0 && !chainReactionOTG)
             {
                 isSelectedOnce = true;
 
@@ -241,6 +241,7 @@ public class GameManager : MonoBehaviour
     }
     private IEnumerator chainBubbleCheck(ITile tile1 = null, ITile tile2 = null)
     {
+        chainReactionOTG = true;
         yield return new WaitUntil(() => { return awaitingTileActionList.Count == 0; });
         bool isAnyBubble = false;
         while (checkForBubble())
@@ -267,6 +268,7 @@ public class GameManager : MonoBehaviour
             awaitingTileActionList.Add(tile1.getTilePos());
             awaitingTileActionList.Add(tile2.getTilePos());
         }
+        chainReactionOTG = false;
     }
     private bool checkForBubble()
     {
