@@ -103,6 +103,7 @@ public class GameManager : MonoBehaviour
         GameObject tmp = null;
         ITile tmpTile = null;
 
+        //Set Background Tile First
         if (tileOffset.Equals(Vector3.zero))
         {
             bg = Instantiate(gSettings.TileBG, gSettings.GridHolder.transform, false);
@@ -113,7 +114,7 @@ public class GameManager : MonoBehaviour
             bg.GetComponent<SpriteRenderer>().size = new Vector2(gSettings.GridSize.y, gSettings.GridSize.x);
 
         }
-
+        //Create Tile Type Collection.
         List<string> tileTypes = new List<string>();
         for (int i = 0; i < gSettings.TilePrefabs.Count; i++)
         {
@@ -193,11 +194,17 @@ public class GameManager : MonoBehaviour
         gSettings.GridHolder.transform.position = Vector3.Scale(gSettings.GridHolder.transform.localScale, new Vector3(x, y, 1));
         #endregion
 
+        //Reposition Background Tile
         ITile bgTile = bg.GetComponent(typeof(ITile)) as ITile;
         bgTile?.spawnAtPos(new Vector2(gSettings.GridSize.x - 1, gSettings.GridSize.y - 1) / 2f);
         bg.transform.localPosition += Vector3.forward * 0.5f;
     }
 
+    /// <summary>
+    /// Resize Gameobject Scale Based on its Renderer Width & Height Relative to Screen Sizes and Depends if it has parent holder. 
+    /// </summary>
+    /// <param name="go">GameObject That Has Renderer and Need to be Rescaled</param>
+    /// <param name="parent">Parent of GameObject, Set it null to be Scaling Independent</param>
     private void Resize(GameObject go, Transform parent = null)
     {
         SpriteRenderer sr = go.GetComponent<SpriteRenderer>();
@@ -243,7 +250,12 @@ public class GameManager : MonoBehaviour
             
             shiftGridItems();
             yield return new WaitUntil(() => { return (awaitingTileActionList.Count == 0); });
+            yield return new WaitForSeconds(0.1f);
+            createNewTiles();
+            yield return new WaitUntil(() => { return (awaitingTileActionList.Count == 0); });
+            yield return new WaitForSeconds(0.1f);
         }
+        //Revert Movement if no bubble detected.
         if (!isAnyBubble && tile1 != null && tile2 != null)
         {
             tile1.revertMovement();
@@ -293,6 +305,7 @@ public class GameManager : MonoBehaviour
 
             }
         }
+        //Clear multiple tiles.
         if(bubbleList.Count > 0)
         {
             bubbleList = bubbleList.Distinct().ToList();
@@ -305,18 +318,58 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < tileBoard.GetLength(1); i++)
         {
             List<ITile> column = new List<ITile>();
+            int readyCount = 0;
             for (int j = 0; j < tileBoard.GetLength(0); j++)
             {
-                column.Add(tileBoard[j, i]);
+                if (tileBoard[j, i].isBubbled())
+                    column.Insert(0, tileBoard[j, i]);
+                else
+                {
+                    column.Add(tileBoard[j, i]);
+                    readyCount++;
+                }
+                    
             }
-            column.RemoveAll(t => t.isBubbled());
+            //Move Non Bubbled Tiles to its new position
+            for (int j = 0; j < tileBoard.GetLength(0); j++)
+            {
+                tileBoard[j, i] = column[j];
+                if(!tileBoard[j, i].isBubbled())
+                {
+                    if (!tileBoard[j, i].getTilePos().Equals(new Vector2(j, i)))
+                    {
+                        tileBoard[j, i].moveToPos(new Vector2(j, i));
+                        awaitingTileActionList.Add(tileBoard[j, i].getTilePos());
+                    }
+                }
+            }
 
-            int startOffset = (int)tileBoard.GetLength(0) - column.Count;
+        }
+    }
+    private void createNewTiles()
+    {
+        for (int i = 0; i < tileBoard.GetLength(1); i++)
+        {
+            #region Find Non Bubbled Tiles
+            List<ITile> column = new List<ITile>();
+            for (int j = tileBoard.GetLength(0) - 1; j >= 0 ; j--)
+            {
+                if (tileBoard[j, i].isBubbled())
+                    break;
+
+                column.Insert(0, tileBoard[j, i]);
+            }
+            #endregion
+
+            //Start Offset Count of Created Tiles 
+            int needTileCount = (int)tileBoard.GetLength(0) - column.Count;
+            //Last Index of Created Tiles
+            int index = needTileCount - 1;
 
             GameObject tmp;
             ITile tmpTile;
-            int index = startOffset - 1;
-            while(column.Count < tileBoard.GetLength(0))
+
+            while (column.Count < tileBoard.GetLength(0))
             {
                 int selectedTile = UnityEngine.Random.Range(0, gSettings.TilePrefabs.Count);
                 tmp = Instantiate(gSettings.TilePrefabs[selectedTile], gSettings.GridHolder.transform, false);
@@ -327,18 +380,22 @@ public class GameManager : MonoBehaviour
 
                 column.Insert(0, tmpTile);
 
-                tmpTile.spawnAtPos(new Vector2(-startOffset + index, i));
+                //Bottom to Top Insertion For new Created Tiles.
+                tmpTile.spawnAtPos(new Vector2(-(needTileCount - index), i));
                 index--;
             }
+            //Move Tiles To Initial Position.
             for (int j = 0; j < tileBoard.GetLength(0); j++)
             {
                 tileBoard[j, i] = column[j];
-                if(!tileBoard[j, i].getTilePos().Equals(new Vector2(j, i)))
+                if (!tileBoard[j, i].isBubbled())
                 {
-                    tileBoard[j, i].moveToPos(new Vector2(j, i));
-                    awaitingTileActionList.Add(tileBoard[j, i].getTilePos());
+                    if (!tileBoard[j, i].getTilePos().Equals(new Vector2(j, i)))
+                    {
+                        tileBoard[j, i].moveToPos(new Vector2(j, i));
+                        awaitingTileActionList.Add(tileBoard[j, i].getTilePos());
+                    }
                 }
-
             }
         }
     }
