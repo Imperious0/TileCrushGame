@@ -111,6 +111,7 @@ public class GameManager : MonoBehaviour
 
             tileOffset = bg.transform.localScale;
             bg.GetComponent<SpriteRenderer>().size = new Vector2(gSettings.GridSize.y, gSettings.GridSize.x);
+
         }
 
         List<string> tileTypes = new List<string>();
@@ -194,6 +195,7 @@ public class GameManager : MonoBehaviour
 
         ITile bgTile = bg.GetComponent(typeof(ITile)) as ITile;
         bgTile?.spawnAtPos(new Vector2(gSettings.GridSize.x - 1, gSettings.GridSize.y - 1) / 2f);
+        bg.transform.localPosition += Vector3.forward * 0.5f;
     }
 
     private void Resize(GameObject go, Transform parent = null)
