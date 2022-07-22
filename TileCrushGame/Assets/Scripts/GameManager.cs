@@ -252,6 +252,8 @@ public class GameManager : MonoBehaviour
             Vector2 tile2Pos = tile2.getTilePos();
             tileBoard[(int)tile1Pos.x, (int)tile1Pos.y] = tile1;
             tileBoard[(int)tile2Pos.x, (int)tile2Pos.y] = tile2;
+            awaitingTileActionList.Add(tile1.getTilePos());
+            awaitingTileActionList.Add(tile2.getTilePos());
         }
     }
     private bool checkForBubble()
