@@ -18,6 +18,7 @@ public class Tile : MonoBehaviour, ITile
 
     private SpriteRenderer sRenderer;
     private Collider2D sCollider;
+    private Transform sTransform;
 
     private Vector2 _prevIndex = Vector2.zero;
     private Vector2 _currentIndex = Vector2.zero;
@@ -32,6 +33,7 @@ public class Tile : MonoBehaviour, ITile
     {
         sRenderer = GetComponent<SpriteRenderer>();
         sCollider = GetComponent<Collider2D>();
+        sTransform = transform;
     }
 
     private void Update()
@@ -40,12 +42,13 @@ public class Tile : MonoBehaviour, ITile
         {
             float timeLapse = Mathf.InverseLerp(0f, _animationDuration, _currentAnimationTime);
             Vector2 nextPos = Vector2.Lerp(_prevPos, _nextPos, timeLapse);
-            transform.localPosition = nextPos;
+            sTransform.localPosition = nextPos;
             _currentPos = nextPos;
             _currentAnimationTime += Time.deltaTime * _animationSpeed;
             if(timeLapse >= 1)
             {
                 _currentAnimationTime = 0f;
+                _currentPos = _nextPos;
                 MovementDoneEvent?.Invoke(this, new EventArgs());
             }
         }
@@ -62,8 +65,8 @@ public class Tile : MonoBehaviour, ITile
     {
         _prevIndex = index;
         _currentIndex = index;
-        transform.localPosition = new Vector3(_currentIndex.y * GameManager.Instance.TileOffset.x, -(_currentIndex.x * GameManager.Instance.TileOffset.y), 0);
-        _currentPos = transform.localPosition;
+        sTransform.localPosition = new Vector3(_currentIndex.y * GameManager.Instance.TileOffset.x, -(_currentIndex.x * GameManager.Instance.TileOffset.y), 0);
+        _currentPos = sTransform.localPosition;
         _nextPos = _currentPos;
     }
     public void moveToPos(Vector2 index)
