@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -15,6 +16,8 @@ public class GameManager : MonoBehaviour
     private ITile[,] tileBoard;
     private List<Vector2> awaitingTileActionList;
 
+    private int _gameScore = 0;
+
     private bool isSelectedOnce = false;
     private bool chainReactionOTG = false;
     [SerializeField]
@@ -23,7 +26,8 @@ public class GameManager : MonoBehaviour
     public Vector3 TileOffset { get => tileOffset; }
     public Vector3 GridScale { get => gSettings.GridHolder.transform.localScale; }
     public float ScreenRatio { get => (Screen.width / gSettings.StableResolution.x) / (Screen.height / gSettings.StableResolution.y); }
-    
+    public int GameScore { get => _gameScore; set { _gameScore = value; gSettings.ScoreText.text = "SCORE: " + _gameScore; } }
+
     private void Awake()
     {
         if(Instance == null)
@@ -98,6 +102,7 @@ public class GameManager : MonoBehaviour
     {
         tileBoard = new ITile[(int)gSettings.GridSize.x, (int)gSettings.GridSize.y];
         awaitingTileActionList = new List<Vector2>();
+        Resize(gSettings.GridBG, Vector3.one, null);
 
         GameObject bg = null;
         GameObject tmp = null;
@@ -107,7 +112,7 @@ public class GameManager : MonoBehaviour
         if (tileOffset.Equals(Vector3.zero))
         {
             bg = Instantiate(gSettings.TileBG, gSettings.GridHolder.transform, false);
-            Resize(bg, gSettings.GridHolder.transform);
+            Resize(bg, new Vector3(gSettings.GridSize.y, gSettings.GridSize.x, 1f), gSettings.GridHolder.transform);
             bg.transform.localScale = bg.transform.localScale + Vector3.one * 0.01f;
 
             tileOffset = bg.transform.localScale;
@@ -173,10 +178,11 @@ public class GameManager : MonoBehaviour
                 selectedTile = tileTypes.IndexOf(selectableTiles[selectedTile]);
 
                 tmp = Instantiate(gSettings.TilePrefabs[selectedTile], gSettings.GridHolder.transform, false);
-                Resize(tmp, gSettings.GridHolder.transform);
+                Resize(tmp, new Vector3(gSettings.GridSize.y, gSettings.GridSize.x, 1f), gSettings.GridHolder.transform);
 
                 tmpTile = tmp.GetComponent(typeof(ITile)) as ITile;
                 tmpTile.MovementDoneEvent += tileAnimationDoneListener;
+                tmpTile.TileBubbleEvent += tileBubbleEvent;
                 tmpTile?.spawnAtPos(new Vector2(i , j));
 
                 tileBoard[i, j] = tmpTile;
@@ -205,7 +211,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="go">GameObject That Has Renderer and Need to be Rescaled</param>
     /// <param name="parent">Parent of GameObject, Set it null to be Scaling Independent</param>
-    private void Resize(GameObject go, Transform parent = null)
+    private void Resize(GameObject go, Vector3 screenScale, Transform parent = null)
     {
         SpriteRenderer sr = go.GetComponent<SpriteRenderer>();
         if (sr == null) return;
@@ -225,8 +231,8 @@ public class GameManager : MonoBehaviour
             screenDimension = Vector2.Scale(screenDimension, gSettings.GridHolder.transform.localScale);
 
         Vector3 newScale = go.transform.localScale;
-        newScale.x = screenDimension.x / gSettings.GridSize.y;
-        newScale.y = screenDimension.y / gSettings.GridSize.x;
+        newScale.x = screenDimension.x / screenScale.x;
+        newScale.y = screenDimension.y / screenScale.y;
         go.transform.localScale = newScale;
 
     }
@@ -238,6 +244,10 @@ public class GameManager : MonoBehaviour
 
         ITile s = sender as ITile;
         awaitingTileActionList.Remove(s.getTilePos());
+    }
+    private void tileBubbleEvent(object sender, BubbleEventArgs e)
+    {
+        GameScore += e.ScorePoint;
     }
     private IEnumerator chainBubbleCheck(ITile tile1 = null, ITile tile2 = null)
     {
@@ -375,10 +385,11 @@ public class GameManager : MonoBehaviour
             {
                 int selectedTile = UnityEngine.Random.Range(0, gSettings.TilePrefabs.Count);
                 tmp = Instantiate(gSettings.TilePrefabs[selectedTile], gSettings.GridHolder.transform, false);
-                Resize(tmp, gSettings.GridHolder.transform);
+                Resize(tmp, new Vector3(gSettings.GridSize.y, gSettings.GridSize.x, 1f), gSettings.GridHolder.transform);
 
                 tmpTile = tmp.GetComponent(typeof(ITile)) as ITile;
                 tmpTile.MovementDoneEvent += tileAnimationDoneListener;
+                tmpTile.TileBubbleEvent += tileBubbleEvent;
 
                 column.Insert(0, tmpTile);
 
@@ -408,6 +419,11 @@ public class GameManager : MonoBehaviour
         [SerializeField]
         private MotionCapturer mCapturer;
         [SerializeField]
+        private GameObject gridBG;
+        [SerializeField]
+        private TextMeshProUGUI scoreText;
+
+        [Space, SerializeField]
         private Vector2 _stableResolution = Vector2.zero;
         [SerializeField]
         private Vector2 _gridSize = Vector2.one;
@@ -426,5 +442,7 @@ public class GameManager : MonoBehaviour
         public GameObject TileBG { get => tileBG; }
         public GameObject GridHolder { get => _gridHolder; }
         public MotionCapturer MCapturer { get => mCapturer; }
+        public GameObject GridBG { get => gridBG; }
+        public TextMeshProUGUI ScoreText { get => scoreText; }
     }
 }

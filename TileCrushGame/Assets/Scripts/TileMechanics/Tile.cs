@@ -6,7 +6,8 @@ public class Tile : MonoBehaviour, ITile
 {
     [SerializeField]
     private string _tileType = "";
-
+    [SerializeField]
+    private int _tileScore = 5;
     [Range(0.1f, 10f), SerializeField]
     private float _animationSpeed = 1f;
     [SerializeField]
@@ -15,6 +16,7 @@ public class Tile : MonoBehaviour, ITile
     private float _currentAnimationTime = 0f;
 
     public event EventHandler<EventArgs> MovementDoneEvent;
+    public event EventHandler<BubbleEventArgs> TileBubbleEvent;
 
     private SpriteRenderer sRenderer;
     private Collider2D sCollider;
@@ -88,6 +90,7 @@ public class Tile : MonoBehaviour, ITile
         sRenderer.enabled = false;
         sCollider.enabled = false;
         _isBubbled = true;
+        TileBubbleEvent?.Invoke(this, new BubbleEventArgs(_tileScore));
         Destroy(gameObject);
     }
     public bool isBubbled()
@@ -95,4 +98,18 @@ public class Tile : MonoBehaviour, ITile
         return _isBubbled;
     }
 
+    public int getTilePoint()
+    {
+        return _tileScore;
+    }
+}
+
+public class BubbleEventArgs : EventArgs
+{
+    int _scorePoint;
+    public BubbleEventArgs(int scorePoint)
+    {
+        _scorePoint = scorePoint;
+    }
+    public int ScorePoint { get => _scorePoint; }
 }
